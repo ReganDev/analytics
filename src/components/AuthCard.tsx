@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import Brand from './Brand'
 
 export default function AuthCard({
   title,
@@ -13,8 +14,7 @@ export default function AuthCard({
     <main className="auth">
       <div className="auth__card">
         <p className="brand">
-          <span className="brand__mark" aria-hidden="true">R</span>
-          Client Portal
+          <Brand />
         </p>
         <h1 className="auth__title">{title}</h1>
         {lead && <p className="auth__lead">{lead}</p>}

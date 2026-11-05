@@ -52,7 +52,7 @@ export default function SiteWorkspace() {
     setCreating(false)
     if (error) return setError(errorMessage(error))
     setPosts((current) => sortPosts([data as Post, ...(current ?? [])]))
-    navigate(`/s/${site!.slug}/p/${(data as Post).id}`)
+    navigate(`/s/${site!.slug}/posts/${(data as Post).id}`)
   }
 
   return (
@@ -80,7 +80,7 @@ export default function SiteWorkspace() {
                     <button
                       className="postlist__item"
                       aria-current={p.id === postId ? 'true' : undefined}
-                      onClick={() => navigate(`/s/${site.slug}/p/${p.id}`)}
+                      onClick={() => navigate(`/s/${site.slug}/posts/${p.id}`)}
                     >
                       <span className="postlist__title">{p.title || 'Untitled'}</span>
                       <span className="postlist__meta">
@@ -103,7 +103,7 @@ export default function SiteWorkspace() {
             onChange={replacePost}
             onDelete={() => {
               setPosts((current) => (current ?? []).filter((p) => p.id !== open.id))
-              navigate(`/s/${site.slug}`)
+              navigate(`/s/${site.slug}/posts`)
             }}
           />
         ) : (
@@ -116,7 +116,7 @@ export default function SiteWorkspace() {
         )}
       </div>
       {open && (
-        <button className="backlink" onClick={() => navigate(`/s/${site.slug}`)}>
+        <button className="backlink" onClick={() => navigate(`/s/${site.slug}/posts`)}>
           ← All posts
         </button>
       )}

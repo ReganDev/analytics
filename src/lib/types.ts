@@ -5,7 +5,12 @@ export interface Site {
   slug: string
   name: string
   site_url: string | null
+  /** The Vercel project whose analytics members see; null hides the Analytics tab. */
+  vercel_project_id: string | null
 }
+
+/** The columns every screen selects for a Site. */
+export const SITE_COLUMNS = 'id, slug, name, site_url, vercel_project_id'
 
 /** The frozen copy a client site builds from. */
 export interface PublishedSnapshot {

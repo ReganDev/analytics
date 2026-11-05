@@ -3,6 +3,9 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { supabase } from '../lib/supabase'
 import type { Site } from '../lib/types'
+import Brand from './Brand'
+import SiteTabs from './SiteTabs'
+import ThemeToggle from './ThemeToggle'
 
 /** Top bar shared by every signed-in screen. */
 export default function Shell({
@@ -21,8 +24,7 @@ export default function Shell({
     <div className="shell">
       <header className="topbar">
         <Link to="/" className="brand brand--bar">
-          <span className="brand__mark" aria-hidden="true">R</span>
-          Client Portal
+          <Brand />
         </Link>
 
         {site && (
@@ -44,20 +46,22 @@ export default function Shell({
             ) : (
               <span className="topbar__site topbar__site--static">{site.name}</span>
             )}
-            {site.site_url && (
-              <a className="topbar__visit" href={site.site_url} target="_blank" rel="noreferrer">
-                View website ↗
-              </a>
-            )}
+            <SiteTabs siteSlug={site.slug} analytics={!!site.vercel_project_id} inline />
           </>
         )}
 
         <span className="topbar__spacer" />
+        {site?.site_url && (
+          <a className="topbar__visit" href={site.site_url} target="_blank" rel="noreferrer">
+            View website ↗
+          </a>
+        )}
         {isAdmin && (
           <Link className="topbar__link" to="/admin">
             Admin
           </Link>
         )}
+        <ThemeToggle />
         <span className="topbar__user" title={session?.user.email}>
           {session?.user.email}
         </span>

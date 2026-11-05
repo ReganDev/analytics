@@ -1,0 +1,25 @@
+<!doctype html>
+<!-- Dev-only UI harness: served by `npm run dev`, never part of the build (only index.html is). -->
+<html lang="en-GB">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Analytics harness · GraySite Portal</title>
+    <script>
+      // Set the theme before first paint: saved choice, else the device setting.
+      try {
+        var saved = localStorage.getItem('portal-theme')
+        document.documentElement.dataset.theme =
+          saved || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      } catch (e) {
+        document.documentElement.dataset.theme = 'light'
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/dev/harness.tsx"></script>
+  </body>
+</html>

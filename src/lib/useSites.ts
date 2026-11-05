@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './supabase'
-import type { Site } from './types'
+import { SITE_COLUMNS, type Site } from './types'
 
 /** Sites the signed-in user can open: their own, or all of them for admins. */
 export function useSites() {
@@ -10,7 +10,7 @@ export function useSites() {
   useEffect(() => {
     supabase
       .from('sites')
-      .select('id, slug, name, site_url')
+      .select(SITE_COLUMNS)
       .order('name')
       .then(({ data, error }) => {
         if (error) setError(error.message)

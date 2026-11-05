@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import Shell from '../components/Shell'
 import { slugify } from '../lib/posts'
 import { errorMessage, supabase } from '../lib/supabase'
-import type { Site } from '../lib/types'
+import { SITE_COLUMNS, type Site } from '../lib/types'
 
 interface Member {
   user_id: string
@@ -11,12 +11,55 @@ interface Member {
   added_at: string
 }
 
-function SiteAdmin({ site, onChange }: { site: Site; onChange: (site: Site) => void }) {
+interface VercelProject {
+  id: string
+  name: string
+  url: string | null
+}
+
+const host = (url: string) => url.replace(/^https?:\/\//, '')
+
+/** The team's Vercel projects, from the admin-only api/vercel-projects function. */
+function useVercelProjects() {
+  const [projects, setProjects] = useState<VercelProject[] | null>(null)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    void (async () => {
+      const { data } = await supabase.auth.getSession()
+      const res = await fetch('/api/vercel-projects', {
+        headers: { Authorization: `Bearer ${data.session?.access_token ?? ''}` },
+      })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setError(body.error ?? `Couldn’t load Vercel projects (${res.status}).`)
+        setProjects([])
+      } else {
+        setProjects(body as VercelProject[])
+      }
+    })()
+  }, [])
+
+  return { projects, error }
+}
+
+function SiteAdmin({
+  site,
+  onChange,
+  projects,
+  projectsError,
+}: {
+  site: Site
+  onChange: (site: Site) => void
+  projects: VercelProject[] | null
+  projectsError: string
+}) {
   const [members, setMembers] = useState<Member[]>([])
   const [hasHook, setHasHook] = useState<boolean | null>(null)
   const [hook, setHook] = useState('')
   const [email, setEmail] = useState('')
   const [siteUrl, setSiteUrl] = useState(site.site_url ?? '')
+  const [projectId, setProjectId] = useState(site.vercel_project_id ?? '')
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
@@ -57,11 +100,24 @@ function SiteAdmin({ site, onChange }: { site: Site; onChange: (site: Site) => v
       .from('sites')
       .update({ site_url: siteUrl.trim() || null })
       .eq('id', site.id)
-      .select('id, slug, name, site_url')
+      .select(SITE_COLUMNS)
       .single()
     if (error) return fail(error)
     onChange(data as Site)
     done('Website address saved.')
+  }
+
+  async function saveProject(event: FormEvent) {
+    event.preventDefault()
+    const { data, error } = await supabase
+      .from('sites')
+      .update({ vercel_project_id: projectId || null })
+      .eq('id', site.id)
+      .select(SITE_COLUMNS)
+      .single()
+    if (error) return fail(error)
+    onChange(data as Site)
+    done(projectId ? 'Analytics connected. Members now see the Analytics tab.' : 'Analytics disconnected.')
   }
 
   async function invite(event: FormEvent) {
@@ -102,9 +158,16 @@ function SiteAdmin({ site, onChange }: { site: Site; onChange: (site: Site) => v
             Build key: <code>{site.slug}</code>
           </p>
         </div>
-        <Link className="button button--ghost button--small" to={`/s/${site.slug}`}>
-          Open posts
-        </Link>
+        <span className="card__actions">
+          {site.vercel_project_id && (
+            <Link className="button button--ghost button--small" to={`/s/${site.slug}`}>
+              Open analytics
+            </Link>
+          )}
+          <Link className="button button--ghost button--small" to={`/s/${site.slug}/posts`}>
+            Open posts
+          </Link>
+        </span>
       </header>
 
       <form className="row" onSubmit={saveUrl}>
@@ -113,6 +176,41 @@ function SiteAdmin({ site, onChange }: { site: Site; onChange: (site: Site) => v
           <input className="input" type="url" placeholder="https://example.co.uk" value={siteUrl} onChange={(e) => setSiteUrl(e.target.value)} />
         </label>
         <button className="button button--ghost">Save</button>
+      </form>
+
+      <form className="row" onSubmit={saveProject}>
+        <label className="field field--grow">
+          <span className="field__label">
+            Vercel project{' '}
+            <span className={`pill ${site.vercel_project_id ? 'pill--ok' : 'pill--warn'}`}>
+              {site.vercel_project_id ? 'Connected' : 'Not connected'}
+            </span>
+          </span>
+          <select
+            className="input"
+            value={projectId}
+            disabled={projects === null}
+            onChange={(e) => setProjectId(e.target.value)}
+          >
+            <option value="">{projects === null ? 'Loading projects…' : 'Not connected'}</option>
+            {projects?.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+                {p.url ? ` — ${host(p.url)}` : ''}
+              </option>
+            ))}
+            {projectId && projects && !projects.some((p) => p.id === projectId) && (
+              <option value={projectId}>{projectId}</option>
+            )}
+          </select>
+          <span className={`field__hint ${projectsError ? 'field__hint--error' : ''}`}>
+            {projectsError ||
+              'Members of this site see this project’s Web Analytics. Turn Web Analytics on for the project in Vercel first.'}
+          </span>
+        </label>
+        <button className="button button--ghost" disabled={projectId === (site.vercel_project_id ?? '')}>
+          Save
+        </button>
       </form>
 
       <form className="row" onSubmit={saveHook}>
@@ -134,7 +232,7 @@ function SiteAdmin({ site, onChange }: { site: Site; onChange: (site: Site) => v
       </form>
 
       <div className="field">
-        <span className="field__label">People who can edit</span>
+        <span className="field__label">People with access</span>
         {members.length === 0 ? (
           <p className="field__hint">Nobody yet.</p>
         ) : (
@@ -170,11 +268,12 @@ export default function Admin() {
   const [name, setName] = useState('')
   const [slug, setSlug] = useState('')
   const [error, setError] = useState('')
+  const vercel = useVercelProjects()
 
   useEffect(() => {
     supabase
       .from('sites')
-      .select('id, slug, name, site_url')
+      .select(SITE_COLUMNS)
       .order('name')
       .then(({ data }) => setSites((data as Site[]) ?? []))
   }, [])
@@ -184,7 +283,7 @@ export default function Admin() {
     const { data, error } = await supabase
       .from('sites')
       .insert({ name: name.trim(), slug: slug || slugify(name) })
-      .select('id, slug, name, site_url')
+      .select(SITE_COLUMNS)
       .single()
     if (error) return setError(error.code === '23505' ? 'That build key is already taken.' : errorMessage(error))
     setSites((current) => [...current, data as Site].sort((a, b) => a.name.localeCompare(b.name)))
@@ -197,7 +296,7 @@ export default function Admin() {
     <Shell>
       <main className="page">
         <h1 className="page__title">Admin</h1>
-        <p className="page__lead">Client sites, who can edit them, and the hook that rebuilds each one on publish.</p>
+        <p className="page__lead">Client sites, who can see them, their Vercel analytics, and the hook that rebuilds each one on publish.</p>
 
         <form className="card row" onSubmit={createSite}>
           <label className="field field--grow">
@@ -216,6 +315,8 @@ export default function Admin() {
           <SiteAdmin
             key={site.id}
             site={site}
+            projects={vercel.projects}
+            projectsError={vercel.error}
             onChange={(next) => setSites((current) => current.map((s) => (s.id === next.id ? next : s)))}
           />
         ))}
