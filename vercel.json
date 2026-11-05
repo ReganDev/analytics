@@ -1,5 +1,7 @@
 {
-  "rewrites": [{ "source": "/((?!api/|assets/|favicon\\.svg).*)", "destination": "/index.html" }],
+  "framework": "vite",
+  "outputDirectory": "dist",
+  "rewrites":[{ "source": "/((?!api/|assets/|favicon\\.svg).*)", "destination": "/index.html" }],
   "headers": [
     {
       "source": "/(.*)",
