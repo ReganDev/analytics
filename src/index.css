@@ -996,6 +996,63 @@ code {
   padding: 0;
 }
 
+/* Blog switched off (src/lib/features.ts): greyed out, a "Soon" badge, and a tip
+   on hover, keyboard focus or tap. */
+.tabs__link--soon,
+.tabs__link--soon:hover {
+  gap: 0.4rem;
+  color: color-mix(in srgb, var(--ink-faint) 55%, transparent);
+  cursor: not-allowed;
+  outline: none;
+}
+
+.tabs__link--soon:focus-visible .tabs__soon {
+  outline: 2px solid var(--ink-faint);
+  outline-offset: 2px;
+}
+
+.tabs__soon {
+  padding: 0.05rem 0.4rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink-faint);
+}
+
+.tabs__tip {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  z-index: 20;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  background: var(--ink);
+  color: var(--surface);
+  font-size: 0.78rem;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  translate: -50% -2px;
+  transition:
+    opacity 120ms ease,
+    translate 120ms ease;
+}
+
+.tabs__link--soon:hover .tabs__tip,
+.tabs__link--soon:focus .tabs__tip {
+  opacity: 1;
+  translate: -50% 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tabs__tip {
+    transition: none;
+  }
+}
+
 /* ---------- analytics board ---------- */
 
 .page--board {

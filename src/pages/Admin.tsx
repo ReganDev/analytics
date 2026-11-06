@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import Shell from '../components/Shell'
+import { BLOG_ENABLED } from '../lib/features'
 import { slugify } from '../lib/posts'
 import { errorMessage, supabase } from '../lib/supabase'
 import { SITE_COLUMNS, type Site } from '../lib/types'
@@ -164,9 +165,11 @@ function SiteAdmin({
               Open analytics
             </Link>
           )}
-          <Link className="button button--ghost button--small" to={`/s/${site.slug}/posts`}>
-            Open posts
-          </Link>
+          {BLOG_ENABLED && (
+            <Link className="button button--ghost button--small" to={`/s/${site.slug}/posts`}>
+              Open posts
+            </Link>
+          )}
         </span>
       </header>
 
